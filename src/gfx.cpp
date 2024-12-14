@@ -32,6 +32,7 @@
 #include "safeguards.h"
 
 uint8_t _dirkeys;        ///< 1 = left, 2 = up, 4 = right, 8 = down
+uint8_t _dirpadkeys;        ///< 1 = left, 2 = up, 4 = right, 8 = down
 bool _fullscreen;
 uint8_t _support8bpp;
 CursorVars _cursor;

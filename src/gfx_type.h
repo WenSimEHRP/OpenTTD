@@ -146,6 +146,32 @@ struct CursorVars {
 	bool dirty;                   ///< the rect occupied by the mouse is dirty (redraw)
 	bool in_window;               ///< mouse inside this window, determines drawing logic
 
+	/* Game controller appearance */
+	bool dpad_up;
+	bool dpad_down;
+	bool dpad_left;
+	bool dpad_right;
+
+	bool left_shoulder;
+	bool right_shoulder;
+
+	bool a_button;
+	bool b_button;
+	bool x_button;
+	bool y_button;
+
+	bool start_button;
+	bool back_button;
+	bool guide_button;
+
+	int32_t left_stick_x;
+	int32_t left_stick_y;
+	int32_t right_stick_x;
+	int32_t right_stick_y;
+
+	int32_t left_trigger;
+	int32_t right_trigger;
+
 	/* Drag data */
 	bool vehchain;                ///< vehicle chain is dragged
 

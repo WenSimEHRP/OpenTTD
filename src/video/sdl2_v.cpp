@@ -525,6 +525,41 @@ bool VideoDriver_SDL_Base::PollEvent()
 			}
 			break;
 		}
+		case SDL_CONTROLLERDEVICEADDED: {
+			SDL_GameController *controller = SDL_GameControllerOpen(ev.cdevice.which);
+		if (controller) {
+			Debug(driver, 1, "Controller connected: {}", SDL_GameControllerName(controller));
+		} else {
+			Debug(driver, 0, "Could not open controller: {}", SDL_GetError());
+		}
+		break;
+		}
+		case SDL_CONTROLLERDEVICEREMOVED: {
+         SDL_GameController *controller = SDL_GameControllerFromInstanceID(ev.cdevice.which);
+         if (controller) {
+             Debug(driver, 1, "Controller disconnected: {}", SDL_GameControllerName(controller));
+             SDL_GameControllerClose(controller);
+         }
+         break;
+		}
+		case SDL_CONTROLLERBUTTONDOWN: {
+			int button = ev.cbutton.button;
+			HandleControllerEvents(button, true);
+			break;
+		}
+		case SDL_CONTROLLERBUTTONUP: {
+			const char *state = ev.cbutton.state == SDL_PRESSED ? "pressed" : "released";
+			Debug(driver, 1, "Controller button {} {}", SDL_GameControllerGetStringForButton((SDL_GameControllerButton)ev.cbutton.button), state);
+			// handle controller events here
+			int button = ev.cbutton.button;
+			HandleControllerEvents(button, false);
+			break;
+		}
+		case SDL_CONTROLLERAXISMOTION: {
+			//Debug(driver, 1, "Controller axis {} value {}", SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)ev.caxis.axis), ev.caxis.value);
+			HandleControllerEvents(ev.caxis.axis, true, ev.caxis.value);
+			break;
+            }
 	}
 
 	return true;
@@ -532,11 +567,11 @@ bool VideoDriver_SDL_Base::PollEvent()
 
 static std::optional<std::string_view> InitializeSDL()
 {
-	/* Check if the video-driver is already initialized. */
-	if (SDL_WasInit(SDL_INIT_VIDEO) != 0) return std::nullopt;
+    /* Check if the video-driver is already initialized. */
+    if (SDL_WasInit(SDL_INIT_VIDEO) != 0) return std::nullopt;
 
-	if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0) return SDL_GetError();
-	return std::nullopt;
+    if (SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0) return SDL_GetError();
+    return std::nullopt;
 }
 
 std::optional<std::string_view> VideoDriver_SDL_Base::Initialize()
@@ -610,26 +645,33 @@ void VideoDriver_SDL_Base::Stop()
 
 void VideoDriver_SDL_Base::InputLoop()
 {
-	uint32_t mod = SDL_GetModState();
-	const Uint8 *keys = SDL_GetKeyboardState(nullptr);
+    uint32_t mod = SDL_GetModState();
+    const Uint8 *keys = SDL_GetKeyboardState(nullptr);
 
-	bool old_ctrl_pressed = _ctrl_pressed;
+    bool old_ctrl_pressed = _ctrl_pressed;
 
-	_ctrl_pressed  = !!(mod & KMOD_CTRL);
-	_shift_pressed = !!(mod & KMOD_SHIFT);
+    _ctrl_pressed  = !!(mod & KMOD_CTRL);
+    _shift_pressed = !!(mod & KMOD_SHIFT);
 
-	/* Speedup when pressing tab, except when using ALT+TAB
-	 * to switch to another application. */
-	this->fast_forward_key_pressed = keys[SDL_SCANCODE_TAB] && (mod & KMOD_ALT) == 0;
+    /* Speedup when pressing tab, except when using ALT+TAB
+     * to switch to another application. */
+    this->fast_forward_key_pressed = keys[SDL_SCANCODE_TAB] && (mod & KMOD_ALT) == 0;
 
-	/* Determine which directional keys are down. */
-	_dirkeys =
-		(keys[SDL_SCANCODE_LEFT]  ? 1 : 0) |
-		(keys[SDL_SCANCODE_UP]    ? 2 : 0) |
-		(keys[SDL_SCANCODE_RIGHT] ? 4 : 0) |
-		(keys[SDL_SCANCODE_DOWN]  ? 8 : 0);
+    /* Determine which directional keys are down. */
+    _dirkeys =
+        (keys[SDL_SCANCODE_LEFT]  ? 1 : 0) |
+        (keys[SDL_SCANCODE_UP]    ? 2 : 0) |
+        (keys[SDL_SCANCODE_RIGHT] ? 4 : 0) |
+        (keys[SDL_SCANCODE_DOWN]  ? 8 : 0);
 
-	if (old_ctrl_pressed != _ctrl_pressed) HandleCtrlChanged();
+    /* Determine which D-pad keys are down. */
+    _dirpadkeys =
+        (_cursor.dpad_left  ? 1 : 0) |
+        (_cursor.dpad_up    ? 2 : 0) |
+        (_cursor.dpad_right ? 4 : 0) |
+        (_cursor.dpad_down  ? 8 : 0);
+
+    if (old_ctrl_pressed != _ctrl_pressed) HandleCtrlChanged();
 }
 
 void VideoDriver_SDL_Base::LoopOnce()

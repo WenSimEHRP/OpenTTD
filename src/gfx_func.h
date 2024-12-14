@@ -49,6 +49,7 @@ void GameLoop();
 void CreateConsole();
 
 extern uint8_t _dirkeys;        ///< 1 = left, 2 = up, 4 = right, 8 = down
+extern uint8_t _dirpadkeys;        ///< 1 = left, 2 = up, 4 = right, 8 = down
 extern bool _fullscreen;
 extern uint8_t _support8bpp;
 extern CursorVars _cursor;
@@ -73,6 +74,7 @@ void HandleKeypress(uint keycode, char32_t key);
 void HandleTextInput(const char *str, bool marked = false, const char *caret = nullptr, const char *insert_location = nullptr, const char *replacement_end = nullptr);
 void HandleCtrlChanged();
 void HandleMouseEvents();
+void HandleControllerEvents(int button, bool pressed, int16_t v = 0);
 void UpdateWindows();
 void ChangeGameSpeed(bool enable_fast_forward);
 

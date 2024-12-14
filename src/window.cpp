@@ -38,6 +38,7 @@
 #include "news_func.h"
 #include "timer/timer.h"
 #include "timer/timer_window.h"
+#include <SDL.h>
 
 #include "safeguards.h"
 
@@ -2778,6 +2779,43 @@ static void HandleKeyScrolling()
 	}
 }
 
+static void HandleDpadScrolling()
+{
+	/*
+	 * Check that any of the dirkeys is pressed and that the focused window
+	 * doesn't have an edit-box as focused widget.
+	 */
+	if (_dirpadkeys && !EditBoxInGlobalFocus()) {
+		int factor = _cursor.left_shoulder ? 50 : 20;
+
+		if (_game_mode != GM_MENU && _game_mode != GM_BOOTSTRAP) {
+			/* Key scrolling stops following a vehicle. */
+			GetMainWindow()->viewport->follow_vehicle = INVALID_VEHICLE;
+		}
+
+		ScrollMainViewport(scrollamt[_dirpadkeys][0] * factor, scrollamt[_dirpadkeys][1] * factor);
+	}
+}
+
+static void HandleLeftStickScrolling()
+{
+	static const int DEADZONE_RADIUS = 3000; // Define a deadzone threshold
+
+	// calculate the radius of x and y
+	int radius = abs(sqrt(_cursor.left_stick_x * _cursor.left_stick_x + _cursor.left_stick_y * _cursor.left_stick_y));
+
+	Debug(misc, 1, "Radius: {}", radius);
+
+	if (radius > DEADZONE_RADIUS && !EditBoxInGlobalFocus()) {
+		Debug(misc, 1, "Scrolled! x: {}, y: {}", _cursor.left_stick_x, _cursor.left_stick_y);
+		if (_game_mode != GM_MENU && _game_mode != GM_BOOTSTRAP) {
+			/* Key scrolling stops following a vehicle. */
+			GetMainWindow()->viewport->follow_vehicle = INVALID_VEHICLE;
+		}
+		ScrollMainViewport(int(_cursor.left_stick_x / 32767.0f * 75), int(_cursor.left_stick_y / 32767.0f * 75));
+	}
+}
+
 static void MouseLoop(MouseClick click, int mousewheel)
 {
 	/* World generation is multithreaded and messes with companies.
@@ -2962,6 +3000,38 @@ void HandleMouseEvents()
 	_cursor.delta.y = 0;
 }
 
+void HandleControllerEvents(int button, bool pressed, int16_t v) {
+	//Debug(misc, 1, "Controller event: button {}, x {}", button, v);
+    switch (button) {
+        case SDL_CONTROLLER_BUTTON_DPAD_UP:
+            _cursor.dpad_up = pressed ? true : false;
+            break;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+            _cursor.dpad_down = pressed ? true : false;
+            break;
+        case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+            _cursor.dpad_left = pressed ? true : false;
+            break;
+        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+            _cursor.dpad_right = pressed ? true : false;
+            break;
+		case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+			_cursor.left_shoulder = pressed ? true : false;
+			break;
+		case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+			_cursor.right_shoulder = pressed ? true : false;
+			break;
+		case SDL_CONTROLLER_AXIS_LEFTX:
+			_cursor.left_stick_x = v;
+			break;
+		case SDL_CONTROLLER_AXIS_LEFTY:
+			_cursor.left_stick_y = v;
+			break;
+		default:
+			break;
+    }
+}
+
 /**
  * Check the soft limit of deletable (non vital, non sticky) windows.
  */
@@ -3029,6 +3099,8 @@ static IntervalTimer<TimerWindow> window_interval(std::chrono::milliseconds(30),
 	CursorTick();
 
 	HandleKeyScrolling();
+	HandleDpadScrolling();
+	HandleLeftStickScrolling();
 	HandleAutoscroll();
 	DecreaseWindowCounters();
 });
