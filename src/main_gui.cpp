@@ -444,6 +444,12 @@ struct MainWindow : Window
 		}
 	}
 
+	void OnTrigger(bool left) override
+	{
+		// only valid if the window is the main window
+		DoZoomInOutWindow(left ? ZOOM_IN : ZOOM_OUT, this);
+	}
+
 	void OnResize() override
 	{
 		if (this->viewport != nullptr) {

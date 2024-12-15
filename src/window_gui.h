@@ -727,6 +727,7 @@ public:
 	 */
 	virtual void OnMouseWheel([[maybe_unused]] int wheel) {}
 
+	virtual void OnTrigger([[maybe_unused]] bool left) {}
 
 	/**
 	 * Called for every mouse loop run, which is at least once per (game) tick.

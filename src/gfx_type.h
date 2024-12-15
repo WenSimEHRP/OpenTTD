@@ -172,6 +172,9 @@ struct CursorVars {
 	int32_t left_trigger;
 	int32_t right_trigger;
 
+	bool left_trigger_pressed;
+	bool right_trigger_pressed;
+
 	/* Drag data */
 	bool vehchain;                ///< vehicle chain is dragged
 

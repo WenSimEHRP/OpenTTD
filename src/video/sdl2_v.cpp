@@ -556,7 +556,6 @@ bool VideoDriver_SDL_Base::PollEvent()
 			break;
 		}
 		case SDL_CONTROLLERAXISMOTION: {
-			//Debug(driver, 1, "Controller axis {} value {}", SDL_GameControllerGetStringForAxis((SDL_GameControllerAxis)ev.caxis.axis), ev.caxis.value);
 			HandleControllerEvents(ev.caxis.axis, true, ev.caxis.value);
 			break;
             }
@@ -650,8 +649,8 @@ void VideoDriver_SDL_Base::InputLoop()
 
     bool old_ctrl_pressed = _ctrl_pressed;
 
-    _ctrl_pressed  = !!(mod & KMOD_CTRL);
-    _shift_pressed = !!(mod & KMOD_SHIFT);
+    _ctrl_pressed  = !!(mod & KMOD_CTRL) || _cursor.right_shoulder;
+    _shift_pressed = !!(mod & KMOD_SHIFT) || _cursor.left_shoulder;
 
     /* Speedup when pressing tab, except when using ALT+TAB
      * to switch to another application. */
